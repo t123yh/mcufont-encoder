@@ -59,7 +59,7 @@ std::set<mf_char> str2set(const char *format)
 std::string mcuprintf(const char *format)
 {
     std::string binaryDigits("01"), octetDigits("01234567"), unsignedDigits("0123456789"), signedDigits(
-            "0123456789-"), floatDigits("0123456789.-"), upperHexDigits("ABCDEF"), lowerHexDigits("abcdef");
+            "0123456789-"), floatDigits("0123456789.-nan"), upperHexDigits("ABCDEF"), lowerHexDigits("abcdef");
     std::string result;
     
     size_t idx = 0U;
