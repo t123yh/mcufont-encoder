@@ -6,6 +6,7 @@
 #include <Font.h>
 #include <yaml-cpp/yaml.h>
 #include <map>
+#include <set>
 #include "json.hpp"
 #include "inja.hpp"
 #include "mcuprintf.h"
@@ -13,6 +14,7 @@
 #include "optimize_rlefont.hh"
 #include "export_rlefont.hh"
 #include "exporttools.hh"
+#include "export_strings.h"
 
 using namespace mcufont;
 
@@ -20,7 +22,7 @@ using namespace mcufont;
 using namespace inja;
 using json = nlohmann::json;
 
-std::string cstring(const std::string& original)
+std::string cstring(const std::string &original)
 {
     std::stringstream buffer;
     buffer << "\"";
@@ -58,10 +60,11 @@ int main(int argc, char **argv)
     std::string outputDir = config["OutputDirectory"].as<std::string>() + "/";
     std::string stringsTemplate = config["StringsTemplate"].as<std::string>();
     int optimizeIterations = config["OptimizeIterations"].as<int>();
+    uint8_t fontid = 0;
     for (auto node : config["Fonts"])
     {
         fonts.insert({node["Name"].as<std::string>(),
-                      ConfigFont(mcufont::filename_to_identifier(node["Name"].as<std::string>()),
+                      ConfigFont(fontid++, mcufont::filename_to_identifier(node["Name"].as<std::string>()),
                                  node["TTF"].as<std::string>(),
                                  node["Size"].as<int>())});
     }
@@ -75,7 +78,16 @@ int main(int argc, char **argv)
     for (auto node : config["Strings"])
     {
         auto name = node["Name"].as<std::string>();
-        UIString obj{name};
+        bool middle = false, erase = false;
+        if (auto eraseNode = node["Erase"]; eraseNode)
+        {
+            erase = eraseNode.as<bool>();
+        }
+        if (auto middleNode = node["Erase"]; middleNode)
+        {
+            middle = middleNode.as<bool>();
+        }
+        UIString obj{name, middle, erase};
         
         if (auto all = node["Content-all"]; all)
         {
@@ -101,6 +113,57 @@ int main(int argc, char **argv)
             }
         }
         uiStrings.push_back(std::move(obj));
+    }
+    
+    {
+        std::ofstream ofs(outputDir + "strings.bin");
+        export_strings(uiStrings, ofs);
+    }
+    
+    {
+        json dat;
+        auto &langs = dat["languages"] = {};
+        for (const auto &lang : languages)
+        {
+            langs.push_back(lang.second.Name);
+        }
+        
+        auto &strings = dat["strings"] = {};
+        for (const auto &str: uiStrings)
+        {
+            json obj{{"name", str.Name}, {"pos", str.Pos}};
+            strings.push_back(obj);
+        }
+        auto& jfonts = dat["fonts"] = {};
+        // Declaring the type of Predicate that accepts 2 pairs and return a bool
+        typedef std::function<bool(const ConfigFont*, const ConfigFont*)> Comparator;
+    
+        // Defining a lambda function to compare two pairs. It will compare two pairs using second field
+        Comparator compFunctor =
+                [](const ConfigFont* elem1, const ConfigFont* elem2)
+                {
+                    return elem1->Id < elem2->Id;
+                };
+        
+        std::vector<const ConfigFont*> fontList;
+        for(auto& font: fonts)
+        {
+            fontList.push_back(&font.second);
+        }
+        
+        sort(fontList.begin(), fontList.end(), compFunctor);
+    
+        for (const auto &font: fontList)
+        {
+            json obj{{"id", font->Id}, {"name", font->Name}};
+            jfonts.push_back(obj);
+        }
+        
+        std::ifstream t(stringsTemplate);
+        std::stringstream buffer;
+        buffer << t.rdbuf();
+        std::ofstream stringsFile(outputDir + "strings.h");
+        render_to(stringsFile, buffer.str(), dat);
     }
     
     {
@@ -144,37 +207,4 @@ int main(int argc, char **argv)
         }
     }
     
-    {
-        json dat;
-        auto &langs = dat["languages"] = {};
-        for (const auto &lang : languages)
-        {
-            langs.push_back(lang.second.Name);
-        }
-        
-        auto &strings = dat["strings"] = {};
-        for (const auto &str: uiStrings)
-        {
-            json obj{{"name", str.Name}};
-            if (str.Default)
-            {
-                obj["value"] = cstring(str.Default->Value);
-                obj["font"] = str.Default->Font->Name;
-            }
-            else
-            {
-                auto& cont = obj["languages"] = {};
-                for (const auto &lang : str.Langs)
-                {
-                    cont.push_back(json{{"lang", languages[lang.first].Name}, {"value", cstring(lang.second.Value)}, {"font", lang.second.Font->Name}});
-                }
-            }
-            strings.push_back(obj);
-        }
-        std::ifstream t(stringsTemplate);
-        std::stringstream buffer;
-        buffer << t.rdbuf();
-        std::ofstream stringsFile(outputDir + "strings.h");
-        render_to(stringsFile, buffer.str(), dat);
-    }
 }

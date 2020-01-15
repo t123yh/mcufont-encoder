@@ -21,13 +21,14 @@ struct Language {
 
 struct ConfigFont
 {
+    uint8_t Id;
     std::string Name;
     std::string TTFPath;
     int Size;
     std::set<mf_char> Characters;
     std::unique_ptr<mcufont::DataFile> Data;
     
-    ConfigFont(std::string name, std::string ttfPath, int size) : Name(name), TTFPath(ttfPath), Size(size), Characters(), Data(nullptr)
+    ConfigFont(uint8_t id, std::string name, std::string ttfPath, int size) : Id(id), Name(name), TTFPath(ttfPath), Size(size), Characters(), Data(nullptr)
     {
     
     }
@@ -42,8 +43,10 @@ struct StringItem
 struct UIString
 {
     std::string Name;
+    bool Middle, Erase;
     std::optional<StringItem> Default;
     std::map<int, StringItem> Langs;
+    int Pos;
 };
 
 #endif //MFENCODER_FONT_H
