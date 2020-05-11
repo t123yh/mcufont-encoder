@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         {
             erase = eraseNode.as<bool>();
         }
-        if (auto middleNode = node["Erase"]; middleNode)
+        if (auto middleNode = node["Middle"]; middleNode)
         {
             middle = middleNode.as<bool>();
         }
@@ -104,7 +104,8 @@ int main(int argc, char **argv)
             {
                 if (auto lang_content = node["Content-" + lang.second.Name]; lang_content)
                 {
-                    ConfigFont &font = fonts.at(lang_content["Font"].as<std::string>());
+                    std::string fname = lang_content["Font"].as<std::string>();
+                    ConfigFont &font = fonts.at(fname);
                     auto str = lang_content["Value"].as<std::string>();
                     auto chset = str2set(str.c_str());
                     font.Characters.merge(chset);
@@ -119,7 +120,6 @@ int main(int argc, char **argv)
         std::ofstream ofs(outputDir + "strings.bin");
         export_strings(uiStrings, ofs);
     }
-    
     {
         json dat;
         auto &langs = dat["languages"] = {};
@@ -166,6 +166,7 @@ int main(int argc, char **argv)
         render_to(stringsFile, buffer.str(), dat);
     }
     
+    uint32_t totalSize = 0;
     {
         std::ofstream fontsHeader(outputDir + "fonts.h");
         std::ofstream fontsSource(outputDir + "fonts.cpp");
@@ -182,13 +183,14 @@ int main(int argc, char **argv)
             size_t oldsize = mcufont::rlefont::get_encoded_size(*cfgFont.second.Data);
             std::cout << "Original size is " << oldsize << " bytes" << std::endl;
             
+            size_t newsize;
             int i = 0, limit = optimizeIterations;
             time_t oldtime = time(NULL);
             while (i < limit)
             {
                 mcufont::rlefont::optimize(*cfgFont.second.Data);
                 
-                size_t newsize = mcufont::rlefont::get_encoded_size(*cfgFont.second.Data);
+                newsize = mcufont::rlefont::get_encoded_size(*cfgFont.second.Data);
                 time_t newtime = time(NULL);
                 
                 int bytes_per_min = (oldsize - newsize) * 60 / (newtime - oldtime + 1);
@@ -200,11 +202,13 @@ int main(int argc, char **argv)
                 if (newsize < 20)
                     break;
             }
+            totalSize += newsize;
             
             std::string def = mcufont::rlefont::write_source(fontsSource, cfgFont.second.Name, *cfgFont.second.Data);
             std::cout << "Wrote " << cfgFont.second.Name << std::endl;
             fontsHeader << def << std::endl;
         }
+        std::cout << "Total font size: " << totalSize << std::endl;
     }
     
 }
