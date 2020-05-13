@@ -120,7 +120,7 @@ int main(int argc, char **argv)
     }
     
     {
-        std::ofstream ofs(outputPath / "strings.bin");
+        std::ofstream ofs(outputPath / "stringtab.bin");
         export_strings(uiStrings, ofs);
     }
     {
@@ -165,7 +165,7 @@ int main(int argc, char **argv)
         std::ifstream t(stringsTemplate);
         std::stringstream buffer;
         buffer << t.rdbuf();
-        std::ofstream stringsFile(outputPath / "strings.h");
+        std::ofstream stringsFile(outputPath / "stringtab.h");
         render_to(stringsFile, buffer.str(), dat);
     }
     
