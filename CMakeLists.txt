@@ -30,3 +30,6 @@ add_executable(yamfencoder
         optimize_rlefont.hh encoding.cpp encoding.h mymain.cpp Font.cpp Font.h mcuprintf.h export_strings.cpp export_strings.h)
 
 target_link_libraries(yamfencoder ${FREETYPE_LIBRARIES} ${YAML_CPP_LIBRARIES} Threads::Threads)
+
+install(TARGETS yamfencoder
+        RUNTIME DESTINATION bin)
