@@ -2,6 +2,7 @@
 // Created by t123yh on 2020/1/3.
 //
 #include <fstream>
+#include <filesystem>
 #include <iostream>
 #include <Font.h>
 #include <yaml-cpp/yaml.h>
@@ -45,20 +46,22 @@ std::string cstring(const std::string &original)
     return buffer.str();
 }
 
+namespace fs = std::filesystem;
+
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc != 3)
     {
-        std::cout << "Usage: encoder <config.yaml>";
+        std::cout << "Usage: encoder <config.yaml> <Output Directory>";
         return 1;
     }
     std::map<int, Language> languages;
     std::map<std::string, ConfigFont> fonts;
     std::vector<UIString> uiStrings;
     
-    YAML::Node config = YAML::LoadFile(argv[1]);
-    std::string outputDir = config["OutputDirectory"].as<std::string>() + "/";
-    std::string stringsTemplate = config["StringsTemplate"].as<std::string>();
+    fs::path configPath = fs::absolute(argv[1]), outputPath = fs::absolute(argv[2]), configDir = configPath.parent_path();
+    YAML::Node config = YAML::LoadFile(configPath.string());
+    std::string stringsTemplate = configDir / config["StringsTemplate"].as<std::string>();
     int optimizeIterations = config["OptimizeIterations"].as<int>();
     uint8_t fontid = 0;
     for (auto node : config["Fonts"])
@@ -117,7 +120,7 @@ int main(int argc, char **argv)
     }
     
     {
-        std::ofstream ofs(outputDir + "strings.bin");
+        std::ofstream ofs(outputPath / "strings.bin");
         export_strings(uiStrings, ofs);
     }
     {
@@ -162,14 +165,14 @@ int main(int argc, char **argv)
         std::ifstream t(stringsTemplate);
         std::stringstream buffer;
         buffer << t.rdbuf();
-        std::ofstream stringsFile(outputDir + "strings.h");
+        std::ofstream stringsFile(outputPath / "strings.h");
         render_to(stringsFile, buffer.str(), dat);
     }
     
     uint32_t totalSize = 0;
     {
-        std::ofstream fontsHeader(outputDir + "fonts.h");
-        std::ofstream fontsSource(outputDir + "fonts.cpp");
+        std::ofstream fontsHeader(outputPath / "fonts.h");
+        std::ofstream fontsSource(outputPath / "fonts.cpp");
         fontsHeader << "#include <rlefont_def.h>" << std::endl;
         fontsSource << "#include <rlefont_def.h>" << std::endl;
         for (auto &cfgFont : fonts)
@@ -177,7 +180,7 @@ int main(int argc, char **argv)
             std::cout << "Processing " << cfgFont.second.Name << " (" << cfgFont.second.Characters.size()
                       << " characters)" << std::endl;
             cfgFont.second.Characters.insert(' ');
-            cfgFont.second.Data = LoadFreetype(cfgFont.second.TTFPath, cfgFont.second.Size, cfgFont.second.Characters);
+            cfgFont.second.Data = LoadFreetype((configDir / cfgFont.second.TTFPath).string(), cfgFont.second.Size, cfgFont.second.Characters);
             mcufont::rlefont::init_dictionary(*cfgFont.second.Data);
             
             size_t oldsize = mcufont::rlefont::get_encoded_size(*cfgFont.second.Data);
