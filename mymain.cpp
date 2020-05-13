@@ -178,13 +178,13 @@ int main(int argc, char **argv)
         for (auto &cfgFont : fonts)
         {
             std::cout << "Processing " << cfgFont.second.Name << " (" << cfgFont.second.Characters.size()
-                      << " characters)" << std::endl;
+                      << " characters, ";
             cfgFont.second.Characters.insert(' ');
             cfgFont.second.Data = LoadFreetype((configDir / cfgFont.second.TTFPath).string(), cfgFont.second.Size, cfgFont.second.Characters);
             mcufont::rlefont::init_dictionary(*cfgFont.second.Data);
             
             size_t oldsize = mcufont::rlefont::get_encoded_size(*cfgFont.second.Data);
-            std::cout << "Original size is " << oldsize << " bytes" << std::endl;
+            std::cout << "original size is " << oldsize << " bytes)" << std::endl;
             
             size_t newsize;
             int i = 0, limit = optimizeIterations;
@@ -199,16 +199,16 @@ int main(int argc, char **argv)
                 int bytes_per_min = (oldsize - newsize) * 60 / (newtime - oldtime + 1);
                 
                 i++;
-                std::cout << "iteration " << i << ", size " << newsize
-                          << " bytes, speed " << bytes_per_min << " B/min"
-                          << std::endl;
+                std::cout << "\33[2K\r" << "Iteration " << i << ", size " << newsize
+                          << " bytes, speed " << bytes_per_min << " B/min";
+                std::cout.flush();
                 if (newsize < 20)
                     break;
             }
+            std::cout << "\33[2K\rCompleted. Size of compressed data is " << newsize << " bytes." << std::endl;
             totalSize += newsize;
             
             std::string def = mcufont::rlefont::write_source(fontsSource, cfgFont.second.Name, *cfgFont.second.Data);
-            std::cout << "Wrote " << cfgFont.second.Name << std::endl;
             fontsHeader << def << std::endl;
         }
         std::cout << "Total font size: " << totalSize << std::endl;
