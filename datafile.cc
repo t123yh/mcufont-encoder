@@ -24,7 +24,6 @@ DataFile::DataFile(const std::vector<dictentry_t> &dictionary,
 void DataFile::Save(std::ostream &file) const
 {
     file << "Version " << DATAFILE_FORMAT_VERSION << std::endl;
-    file << "FontName " << m_fontinfo.name << std::endl;
     file << "MaxWidth " << m_fontinfo.max_width << std::endl;
     file << "MaxHeight " << m_fontinfo.max_height << std::endl;
     file << "BaselineX " << m_fontinfo.baseline_x << std::endl;
@@ -73,11 +72,6 @@ std::unique_ptr<DataFile> DataFile::Load(std::istream &file)
         if (tag == "Version")
         {
             input >> version;
-        }
-        else if (tag == "FontName")
-        {
-            while (std::isspace(input.peek())) input.get();
-            std::getline(input, fontinfo.name);
         }
         else if (tag == "MaxWidth")
         {

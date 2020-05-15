@@ -1,6 +1,7 @@
 #include "freetype_import.hh"
 #include "importtools.hh"
 #include <map>
+#include <filesystem>
 #include <string>
 #include <stdexcept>
 #include <iostream>
@@ -96,10 +97,6 @@ std::unique_ptr<DataFile> LoadFreetype(const std::string &file, int size, const 
     // Convert size to pixels and round to nearest.
     int u_per_em = face->units_per_EM;
     auto topx = [size, u_per_em](int s) { return (s * size + u_per_em / 2) / u_per_em; };
-    
-    fontinfo.name = std::string(face->family_name) + " " +
-                    std::string(face->style_name) + " " +
-                    std::to_string(size);
     
     // Reserve 4 pixels on each side for antialiasing + hinting.
     // They will be cropped off later.

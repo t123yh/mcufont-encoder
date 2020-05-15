@@ -35,7 +35,6 @@ public:
     
     struct fontinfo_t
     {
-        std::string name; // Name of the typeface
         int max_width; // Width of the character bounding box.
         int max_height; // Height of the character bounding box.
         int baseline_x; // X coordinate (from left) of the baseline.
