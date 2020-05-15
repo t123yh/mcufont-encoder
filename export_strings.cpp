@@ -21,6 +21,7 @@ static uint8_t create_header(uint8_t fontId, bool isNonLanguaged, bool isMiddle,
 void export_strings(std::vector<UIString> &src, std::ostream & oss)
 {
     std::vector<uint8_t> buf;
+    buf.push_back(0); // skip the first byte to skip position 0 (pos 0 means empty string)
     for (auto &str : src)
     {
         str.Pos = buf.size();
