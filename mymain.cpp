@@ -90,7 +90,22 @@ int main(int argc, char **argv)
         {
             middle = middleNode.as<bool>();
         }
-        UIString obj{name, middle, erase};
+        UIString::AlignType align = middle ? UIString::Middle : UIString::Left;
+        if (auto alignNode = node["Align"]; alignNode)
+        {
+            auto alignStr = alignNode.as<std::string>();
+            if (alignStr == "Left") {
+                align = UIString::Left;
+            } else if (alignStr == "Middle") {
+                align = UIString::Middle;
+            } else if (alignStr == "Right") {
+                align = UIString::Right;
+            } else {
+                throw std::runtime_error(&"Invalid align value: "[align]);
+            }
+        }
+        
+        UIString obj{name, erase, align};
         
         if (auto all = node["Content-all"]; all)
         {

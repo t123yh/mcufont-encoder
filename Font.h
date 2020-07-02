@@ -42,8 +42,10 @@ struct StringItem
 
 struct UIString
 {
+    enum AlignType {Left = 0, Middle = 1, Right = 2};
     std::string Name;
-    bool Middle, Erase;
+    bool Erase;
+    AlignType Align;
     std::optional<StringItem> Default;
     std::map<int, StringItem> Langs;
     int Pos;
