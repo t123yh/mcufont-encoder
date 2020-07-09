@@ -78,9 +78,15 @@ int main(int argc, char **argv)
         languages.insert({lang_i, Language{name, lang_i++}});
     }
     
+    std::set<std::string> string_names;
     for (auto node : config["Strings"])
     {
         auto name = node["Name"].as<std::string>();
+        if (string_names.count(name) > 0) {
+            throw std::runtime_error("Duplicate string name \"" + name + "\"");
+        } else {
+            string_names.insert(name);
+        }
         bool middle = false, erase = false;
         if (auto eraseNode = node["Erase"]; eraseNode)
         {
