@@ -179,7 +179,7 @@ int main(int argc, char **argv)
     
         for (const auto &font: fontList)
         {
-            json obj{{"id", font->Id}, {"name", font->Name}};
+            json obj{{"id", font->Id}, {"name", font->Name}, {"empty", (bool)font->Characters.empty()}};
             jfonts.push_back(obj);
         }
         
@@ -200,6 +200,10 @@ int main(int argc, char **argv)
         {
             std::cout << "Processing " << cfgFont.second.Name << " (" << cfgFont.second.Characters.size()
                       << " characters, ";
+            if (cfgFont.second.Characters.empty()) {
+                std::cout << " skipped." << std::endl;
+                continue;
+            }
             cfgFont.second.Characters.insert(' ');
             cfgFont.second.Data = LoadFreetype((configDir / cfgFont.second.TTFPath).string(), cfgFont.second.Size, cfgFont.second.Characters);
             mcufont::rlefont::init_dictionary(*cfgFont.second.Data);
